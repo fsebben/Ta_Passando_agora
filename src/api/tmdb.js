@@ -8,7 +8,7 @@ const LANGUAGE = 'pt-BR'
 const MAX_PROVIDERS = 10
 
 const TOKEN_ERROR = 'Token do TMDB inválido ou ausente. Configure VITE_TMDB_TOKEN no arquivo .env.'
-const NOT_FOUND_ERROR = 'Filme não encontrado.'
+export const NOT_FOUND_ERROR = 'Filme não encontrado.'
 const GENERIC_ERROR = 'Não foi possível carregar os dados. Tente novamente.'
 
 async function request(path, params = {}) {
