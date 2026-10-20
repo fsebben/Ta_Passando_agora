@@ -1,0 +1,295 @@
+/* ---------- Cores e medidas do tema escuro ---------- */
+:root {
+  --bg: #141414;
+  --surface: #1f1f1f;
+  --surface-hover: #2a2a2a;
+  --text: #f2f2f2;
+  --text-muted: #a3a3a3;
+  --accent: #e5a00d;
+  --danger: #ff6b6b;
+  --radius: 8px;
+  --gutter: 16px;
+
+  color-scheme: dark;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+}
+
+a {
+  color: var(--accent);
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Estrutura da página ---------- */
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+.app > main {
+  flex: 1;
+}
+
+.header {
+  padding: 20px 0;
+}
+
+.header__title {
+  color: var(--text);
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.header__title:hover {
+  color: var(--accent);
+}
+
+.footer {
+  margin-top: 48px;
+  padding: 24px 0;
+  border-top: 1px solid var(--surface-hover);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.footer p {
+  margin: 8px 0 0;
+}
+
+/* ---------- Filtro de serviços ---------- */
+.provider-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.provider-filter__item {
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  background: none;
+  opacity: 0.45;
+  transition: opacity 0.15s, border-color 0.15s;
+}
+
+.provider-filter__item:hover {
+  opacity: 0.8;
+}
+
+.provider-filter__item[aria-pressed='true'] {
+  opacity: 1;
+  border-color: var(--accent);
+}
+
+.provider-filter__item img {
+  display: block;
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+}
+
+.provider-filter__clear {
+  padding: 8px 14px;
+  border: 1px solid var(--text-muted);
+  border-radius: var(--radius);
+  background: none;
+  color: var(--text);
+}
+
+.provider-filter__clear:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* ---------- Grade de filmes ---------- */
+.movie-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 20px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.movie-card {
+  display: block;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.movie-card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: var(--radius);
+  background: var(--surface);
+  transition: transform 0.15s;
+}
+
+.movie-card:hover img {
+  transform: scale(1.03);
+}
+
+.movie-card h3 {
+  margin: 8px 0 2px;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.movie-card__meta {
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+/* ---------- Estados: carregando, vazio, erro ---------- */
+.loading,
+.empty {
+  padding: 32px 0;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.error-message {
+  padding: 16px;
+  border-left: 4px solid var(--danger);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.error-message p {
+  margin: 0 0 8px;
+}
+
+.error-message button,
+.load-more button,
+.back-button {
+  padding: 10px 18px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.error-message button:hover,
+.load-more button:hover,
+.back-button:hover {
+  background: #383838;
+}
+
+.load-more {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+/* ---------- Página de detalhes ---------- */
+.back-button {
+  margin-bottom: 20px;
+}
+
+.details__content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.details__poster {
+  width: 100%;
+  max-width: 320px;
+  align-self: center;
+  border-radius: var(--radius);
+}
+
+.details__info h1 {
+  margin: 0 0 8px;
+  font-size: 2rem;
+  line-height: 1.2;
+}
+
+.details__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 0 0 8px;
+  color: var(--text-muted);
+}
+
+.details__genres {
+  margin: 0 0 16px;
+  color: var(--text-muted);
+}
+
+.details__overview {
+  max-width: 65ch;
+}
+
+.where-to-watch h2 {
+  font-size: 1.2rem;
+}
+
+.where-to-watch ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.where-to-watch li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.where-to-watch img {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+}
+
+@media (min-width: 768px) {
+  .details__content {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .details__poster {
+    align-self: flex-start;
+    flex-shrink: 0;
+  }
+}
