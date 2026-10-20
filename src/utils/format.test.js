@@ -18,3 +18,8 @@ describe('formatRuntime', () => {
   test('zero vira texto vazio', () => expect(formatRuntime(0)).toBe(''))
   test('null vira texto vazio', () => expect(formatRuntime(null)).toBe(''))
 })
+
+describe('formatRating com dados ausentes', () => {
+  test('nota indefinida mostra "Sem nota"', () => expect(formatRating(undefined, 5)).toBe('Sem nota'))
+  test('nota e votos indefinidos mostram "Sem nota"', () => expect(formatRating(undefined, undefined)).toBe('Sem nota'))
+})

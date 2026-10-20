@@ -6,6 +6,7 @@ const IMAGE_BASE = 'https://image.tmdb.org/t/p'
 const REGION = 'BR'
 const LANGUAGE = 'pt-BR'
 const MAX_PROVIDERS = 10
+const MAX_PAGES = 500
 
 const TOKEN_ERROR = 'Token do TMDB inválido ou ausente. Configure VITE_TMDB_TOKEN no arquivo .env.'
 export const NOT_FOUND_ERROR = 'Filme não encontrado.'
@@ -29,7 +30,11 @@ async function request(path, params = {}) {
   if (response.status === 401) throw new Error(TOKEN_ERROR)
   if (response.status === 404) throw new Error(NOT_FOUND_ERROR)
   if (!response.ok) throw new Error(GENERIC_ERROR)
-  return response.json()
+  try {
+    return await response.json()
+  } catch {
+    throw new Error(GENERIC_ERROR)
+  }
 }
 
 function toProvider(p) {
@@ -67,7 +72,12 @@ export async function getStreamingMovies({ providers, page }) {
   if (providers.length > 0) params.with_watch_providers = providers.join('|')
 
   const data = await request('/discover/movie', params)
-  return { movies: data.results.map(toMovie), page: data.page, totalPages: data.total_pages }
+  // O TMDB não aceita page acima de 500, mesmo quando total_pages é maior
+  return {
+    movies: data.results.map(toMovie),
+    page: data.page,
+    totalPages: Math.min(data.total_pages, MAX_PAGES),
+  }
 }
 
 export async function getMovieDetails(id) {
@@ -78,7 +88,7 @@ export async function getMovieDetails(id) {
   return {
     ...toMovie(data),
     runtime: data.runtime,
-    genres: data.genres.map((g) => g.name),
+    genres: (data.genres ?? []).map((g) => g.name),
     overview: data.overview,
     streamingProviders: flatrate.map(toProvider),
   }

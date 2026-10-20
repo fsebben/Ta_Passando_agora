@@ -183,3 +183,20 @@ describe('imageUrl', () => {
     expect(imageUrl(null, 'w342')).toBeNull()
   })
 })
+
+describe('dados inesperados da API', () => {
+  test('totalPages respeita o limite de 500 páginas do TMDB', async () => {
+    mockFetch({ page: 1, total_pages: 1200, results: [] })
+    expect((await getStreamingMovies({ providers: [], page: 1 })).totalPages).toBe(500)
+  })
+
+  test('detalhes sem genres viram lista vazia', async () => {
+    mockFetch({ id: 1, title: 'X', vote_average: 5, vote_count: 1, overview: '' })
+    expect((await getMovieDetails(1)).genres).toEqual([])
+  })
+
+  test('resposta que não é JSON vira a mensagem genérica', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => { throw new SyntaxError('Unexpected token <') } }))
+    await expect(getProviders()).rejects.toThrow(GENERIC_MSG)
+  })
+})

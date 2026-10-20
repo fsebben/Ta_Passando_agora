@@ -3,7 +3,8 @@ export function formatYear(releaseDate) {
 }
 
 export function formatRating(voteAverage, voteCount) {
-  return voteCount === 0 ? 'Sem nota' : `⭐ ${voteAverage.toFixed(1)}`
+  if (!voteCount || voteAverage == null) return 'Sem nota'
+  return `⭐ ${voteAverage.toFixed(1)}`
 }
 
 export function formatRuntime(minutes) {

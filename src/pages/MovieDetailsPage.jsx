@@ -16,6 +16,13 @@ function MovieDetailsPage() {
   const [retryCount, setRetryCount] = useState(0)
 
   useEffect(() => {
+    // Ids do TMDB são sempre números; outro valor nem chega a ser buscado
+    if (!/^\d+$/.test(id)) {
+      setError(NOT_FOUND_ERROR)
+      setStatus('error')
+      return
+    }
+
     let ignore = false
     setStatus('loading')
 

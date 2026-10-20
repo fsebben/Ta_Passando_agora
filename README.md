@@ -56,6 +56,10 @@ src/
 
 Como o app roda inteiro no navegador, o token do TMDB fica embutido no JavaScript publicado e pode ser visto por quem inspecionar o site. Para este projeto de estudo isso é aceitável: o token é gratuito e só permite **leitura**. Uma versão futura pode esconder o token atrás de uma função serverless.
 
+## Limitações conhecidas (v1)
+
+- Ao voltar da página de um filme, a lista recomeça da primeira página e do topo. Os filmes de "Carregar mais" não são lembrados.
+
 ## Publicação (Vercel)
 
 1. Envie o projeto para um repositório no GitHub.

@@ -120,3 +120,11 @@ test('"← Voltar" com histórico volta para a página anterior', async () => {
 
   expect(screen.getByText('Tela inicial')).toBeInTheDocument()
 })
+
+test('id que não é número mostra "Filme não encontrado." sem chamar a API', async () => {
+  renderDetails('/filme/abc')
+
+  expect(await screen.findByRole('alert')).toHaveTextContent('Filme não encontrado.')
+  expect(getMovieDetails).not.toHaveBeenCalled()
+  expect(screen.getByRole('link', { name: 'Ir para a tela inicial' })).toBeInTheDocument()
+})
