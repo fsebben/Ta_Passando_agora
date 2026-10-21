@@ -4,6 +4,8 @@ Web app que mostra os filmes disponíveis **agora** nos serviços de streaming p
 
 - Grade de filmes ordenada por popularidade, com botão "Carregar mais"
 - Filtro por serviço de streaming (dá para marcar vários; o filtro fica na URL)
+- Busca por nome (mostra só os filmes que estão em streaming)
+- Filtro de nota mínima: 6+, 7+, 8+ ou 9+ (nota do TMDB, contando só filmes com pelo menos 200 votos)
 - Página de detalhes de cada filme, com a seção "Onde assistir"
 
 Feito com React + Vite, usando a API do [TMDB](https://www.themoviedb.org/). Projeto de estudo.
