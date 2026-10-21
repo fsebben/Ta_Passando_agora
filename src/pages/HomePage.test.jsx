@@ -181,3 +181,44 @@ test('se os provedores falharem, a grade continua funcionando', async () => {
   expect(await screen.findByText('Filme 1')).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Limpar' })).not.toBeInTheDocument()
 })
+
+test('página 1 com filme repetido mostra o filme uma vez só', async () => {
+  vi.mocked(getStreamingMovies).mockResolvedValue({ movies: [movie(1), movie(1), movie(2)], page: 1, totalPages: 1 })
+  renderHome()
+
+  await screen.findByText('Filme 2')
+  expect(movieTitles()).toEqual(['Filme 1', 'Filme 2'])
+})
+
+test('se os provedores falharem com filtro ativo na URL, "Limpar" continua disponível', async () => {
+  vi.mocked(getProviders).mockRejectedValue(new Error('x'))
+  vi.mocked(getStreamingMovies).mockResolvedValue(pageOf([1]))
+  renderHome('/?streaming=8')
+  await screen.findByText('Filme 1')
+
+  await userEvent.click(screen.getByRole('button', { name: 'Limpar' }))
+
+  expect(currentSearch).toBe('')
+})
+
+test('trocar o filtro durante o Carregar mais não deixa o carregamento preso', async () => {
+  const slowPage2 = deferred()
+  vi.mocked(getStreamingMovies)
+    .mockResolvedValueOnce(pageOf([1], 1, 3))
+    .mockReturnValueOnce(slowPage2.promise)
+    .mockResolvedValueOnce(pageOf([5], 1, 3))
+  renderHome()
+  await screen.findByText('Filme 1')
+
+  await userEvent.click(screen.getByRole('button', { name: 'Carregar mais' }))
+  await userEvent.click(screen.getByRole('button', { name: 'Netflix' }))
+
+  expect(await screen.findByText('Filme 5')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Carregar mais' })).toBeInTheDocument()
+  expect(screen.queryByRole('status')).not.toBeInTheDocument()
+
+  slowPage2.resolve(pageOf([2], 2, 3))
+  await new Promise((r) => setTimeout(r, 0))
+  expect(movieTitles()).toEqual(['Filme 5'])
+  expect(screen.getByRole('button', { name: 'Carregar mais' })).toBeInTheDocument()
+})

@@ -7,8 +7,13 @@ export function parseProviderIds(param) {
     .map(Number)
 }
 
-// O TMDB pode repetir um filme entre páginas; mantemos só a primeira ocorrência
+// O TMDB pode repetir um filme (entre páginas ou na mesma resposta); mantemos só a primeira ocorrência
 export function mergeMovies(current, incoming) {
   const ids = new Set(current.map((movie) => movie.id))
-  return [...current, ...incoming.filter((movie) => !ids.has(movie.id))]
+  const added = incoming.filter((movie) => {
+    if (ids.has(movie.id)) return false
+    ids.add(movie.id)
+    return true
+  })
+  return [...current, ...added]
 }

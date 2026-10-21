@@ -7,7 +7,7 @@ function MovieCard({ movie }) {
     <Link to={`/filme/${movie.id}`} className="movie-card">
       <img
         src={imageUrl(movie.posterPath, 'w342') ?? '/no-poster.svg'}
-        alt={movie.title}
+        alt=""
         loading="lazy"
       />
       <h3>{movie.title}</h3>

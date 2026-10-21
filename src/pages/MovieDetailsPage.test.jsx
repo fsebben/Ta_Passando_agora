@@ -64,7 +64,7 @@ test('"Onde assistir" lista os serviços', async () => {
 
   const section = await screen.findByRole('region', { name: 'Onde assistir' })
   expect(within(section).getByText('Max')).toBeInTheDocument()
-  expect(within(section).getByRole('img', { name: 'Max' })).toHaveAttribute('src', 'https://image.tmdb.org/t/p/w92/m.png')
+  expect(section.querySelector('img')).toHaveAttribute('src', 'https://image.tmdb.org/t/p/w92/m.png')
 })
 
 test('sem serviços mostra que não está disponível no Brasil', async () => {
@@ -127,4 +127,22 @@ test('id que não é número mostra "Filme não encontrado." sem chamar a API', 
   expect(await screen.findByRole('alert')).toHaveTextContent('Filme não encontrado.')
   expect(getMovieDetails).not.toHaveBeenCalled()
   expect(screen.getByRole('link', { name: 'Ir para a tela inicial' })).toBeInTheDocument()
+})
+
+test('"← Voltar" aparece enquanto carrega', () => {
+  vi.mocked(getMovieDetails).mockReturnValue(new Promise(() => {}))
+  renderDetails()
+
+  expect(screen.getByRole('status')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: '← Voltar' })).toBeInTheDocument()
+})
+
+test('logos de "Onde assistir" são decorativos (o nome já aparece ao lado)', async () => {
+  vi.mocked(getMovieDetails).mockResolvedValue(details)
+  renderDetails()
+
+  const section = await screen.findByRole('region', { name: 'Onde assistir' })
+  expect(within(section).getByText('Max')).toBeInTheDocument()
+  expect(within(section).queryByRole('img')).not.toBeInTheDocument()
+  expect(section.querySelector('img')).toHaveAttribute('alt', '')
 })

@@ -55,7 +55,14 @@ function MovieDetailsPage() {
     </button>
   )
 
-  if (status === 'loading') return <Loading />
+  if (status === 'loading') {
+    return (
+      <main className="details">
+        {backButton}
+        <Loading />
+      </main>
+    )
+  }
 
   if (status === 'error') {
     const notFound = error === NOT_FOUND_ERROR
@@ -93,7 +100,7 @@ function MovieDetailsPage() {
               <ul>
                 {movie.streamingProviders.map((provider) => (
                   <li key={provider.id}>
-                    <img src={imageUrl(provider.logoPath, 'w92')} alt={provider.name} />
+                    <img src={imageUrl(provider.logoPath, 'w92')} alt="" />
                     <span>{provider.name}</span>
                   </li>
                 ))}

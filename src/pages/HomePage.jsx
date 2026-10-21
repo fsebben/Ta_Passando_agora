@@ -38,12 +38,13 @@ function HomePage() {
     let ignore = false
     setStatus('loading')
     setMovies([])
+    setLoadingMore(false)
     setLoadMoreError('')
 
     getStreamingMovies({ providers: parseProviderIds(filterKey), page: 1 })
       .then((data) => {
         if (ignore) return
-        setMovies(data.movies)
+        setMovies(mergeMovies([], data.movies))
         setPage(data.page)
         setTotalPages(data.totalPages)
         setStatus('success')
@@ -76,13 +77,15 @@ function HomePage() {
     } catch (err) {
       if (currentFilter.current === filterAtRequest) setLoadMoreError(err.message)
     } finally {
-      setLoadingMore(false)
+      // Se o filtro mudou, o efeito do filtro novo já cuidou do estado de carregamento
+      if (currentFilter.current === filterAtRequest) setLoadingMore(false)
     }
   }
 
   return (
     <main className="home">
-      {providers.length > 0 && (
+      {/* Com filtro ativo, mostra pelo menos o "Limpar", mesmo se os logos não carregaram */}
+      {(providers.length > 0 || selected.length > 0) && (
         <ProviderFilter providers={providers} selected={selected} onChange={handleFilterChange} />
       )}
 

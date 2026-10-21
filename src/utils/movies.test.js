@@ -15,3 +15,12 @@ describe('mergeMovies', () => {
     expect(mergeMovies([a, b], [bRepetido, c])).toEqual([a, b, c])
   })
 })
+
+describe('mergeMovies com repetidos na mesma resposta', () => {
+  test('remove repetidos dentro da lista recebida', () => {
+    const a = { id: 1 }
+    const aRepetido = { id: 1, title: 'repetido' }
+    const b = { id: 2 }
+    expect(mergeMovies([], [a, aRepetido, b])).toEqual([a, b])
+  })
+})

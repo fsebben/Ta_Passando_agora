@@ -217,3 +217,15 @@ describe('getProviders sem lojas de aluguel e compra', () => {
     expect(providers.map((p) => p.id)).toEqual([8, 119, 350, 337, 167, 47, 531, 1899, 307, 484])
   })
 })
+
+describe('404 fora da página de detalhes', () => {
+  test('404 em getProviders vira a mensagem genérica', async () => {
+    mockFetch({}, { ok: false, status: 404 })
+    await expect(getProviders()).rejects.toThrow(GENERIC_MSG)
+  })
+
+  test('404 em getStreamingMovies vira a mensagem genérica', async () => {
+    mockFetch({}, { ok: false, status: 404 })
+    await expect(getStreamingMovies({ providers: [], page: 1 })).rejects.toThrow(GENERIC_MSG)
+  })
+})

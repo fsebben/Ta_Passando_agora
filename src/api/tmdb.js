@@ -15,7 +15,8 @@ const TOKEN_ERROR = 'Token do TMDB inválido ou ausente. Configure VITE_TMDB_TOK
 export const NOT_FOUND_ERROR = 'Filme não encontrado.'
 const GENERIC_ERROR = 'Não foi possível carregar os dados. Tente novamente.'
 
-async function request(path, params = {}) {
+// notFoundMessage: só a busca de um filme específico trata 404 como "Filme não encontrado."
+async function request(path, params = {}, notFoundMessage = GENERIC_ERROR) {
   // Lido aqui dentro (e não no topo do arquivo) para que os testes possam trocar o valor
   const token = import.meta.env.VITE_TMDB_TOKEN
   if (!token) throw new Error(TOKEN_ERROR)
@@ -31,7 +32,7 @@ async function request(path, params = {}) {
   }
 
   if (response.status === 401) throw new Error(TOKEN_ERROR)
-  if (response.status === 404) throw new Error(NOT_FOUND_ERROR)
+  if (response.status === 404) throw new Error(notFoundMessage)
   if (!response.ok) throw new Error(GENERIC_ERROR)
   try {
     return await response.json()
@@ -85,9 +86,11 @@ export async function getStreamingMovies({ providers, page }) {
 }
 
 export async function getMovieDetails(id) {
-  const data = await request(`/movie/${encodeURIComponent(id)}`, {
-    append_to_response: 'watch/providers',
-  })
+  const data = await request(
+    `/movie/${encodeURIComponent(id)}`,
+    { append_to_response: 'watch/providers' },
+    NOT_FOUND_ERROR,
+  )
   const flatrate = data['watch/providers']?.results?.[REGION]?.flatrate ?? []
   return {
     ...toMovie(data),

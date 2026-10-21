@@ -5,25 +5,32 @@ import MovieCard from './MovieCard'
 const movie = { id: 1, title: 'Duna', posterPath: '/d.jpg', releaseDate: '2024-03-01', voteAverage: 7.83, voteCount: 10 }
 
 function renderCard(props) {
-  render(
+  const { container } = render(
     <MemoryRouter>
       <MovieCard movie={{ ...movie, ...props }} />
     </MemoryRouter>,
   )
+  return container.querySelector('img')
 }
 
 test('mostra título, ano e nota, com link para os detalhes', () => {
-  renderCard()
+  const poster = renderCard()
   expect(screen.getByText('Duna')).toBeInTheDocument()
   expect(screen.getByText('2024')).toBeInTheDocument()
   expect(screen.getByText('⭐ 7.8')).toBeInTheDocument()
   expect(screen.getByRole('link')).toHaveAttribute('href', '/filme/1')
-  expect(screen.getByRole('img', { name: 'Duna' })).toHaveAttribute('src', 'https://image.tmdb.org/t/p/w342/d.jpg')
+  expect(poster).toHaveAttribute('src', 'https://image.tmdb.org/t/p/w342/d.jpg')
+})
+
+test('o pôster é decorativo, para o leitor de tela não repetir o título', () => {
+  const poster = renderCard()
+  expect(poster).toHaveAttribute('alt', '')
+  expect(screen.getByRole('link')).toHaveAccessibleName(/^Duna 2024 ?⭐ 7.8$/)
 })
 
 test('sem pôster usa a imagem genérica', () => {
-  renderCard({ posterPath: null })
-  expect(screen.getByRole('img', { name: 'Duna' })).toHaveAttribute('src', '/no-poster.svg')
+  const poster = renderCard({ posterPath: null })
+  expect(poster).toHaveAttribute('src', '/no-poster.svg')
 })
 
 test('filme sem votos mostra "Sem nota"', () => {
