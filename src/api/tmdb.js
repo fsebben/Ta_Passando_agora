@@ -7,6 +7,7 @@ const REGION = 'BR'
 const LANGUAGE = 'pt-BR'
 const MAX_PROVIDERS = 10
 const MAX_PAGES = 500
+export const MIN_VOTES = 200
 // Lojas de aluguel/compra: o TMDB as lista junto com os streamings, mas não são assinatura
 // 2 = Apple TV Store, 3 = Google Play Filmes, 10 = Amazon Video, 68 = Microsoft Store
 const RENTAL_STORE_IDS = [2, 3, 10, 68]
@@ -66,7 +67,12 @@ export async function getProviders() {
     .map(toProvider)
 }
 
-export async function getStreamingMovies({ providers, page }) {
+// O TMDB não aceita page acima de 500, mesmo quando total_pages é maior
+function toMoviePage(data, movies) {
+  return { movies, page: data.page, totalPages: Math.min(data.total_pages, MAX_PAGES) }
+}
+
+export async function getStreamingMovies({ providers, minRating, page }) {
   const params = {
     watch_region: REGION,
     with_watch_monetization_types: 'flatrate',
@@ -75,14 +81,36 @@ export async function getStreamingMovies({ providers, page }) {
   }
   // "|" significa OU: filmes em qualquer um dos serviços escolhidos
   if (providers.length > 0) params.with_watch_providers = providers.join('|')
+  if (minRating > 0) {
+    params['vote_average.gte'] = String(minRating)
+    // Sem um mínimo de votos, filmes obscuros com poucas avaliações aparecem com nota alta
+    params['vote_count.gte'] = String(MIN_VOTES)
+  }
 
   const data = await request('/discover/movie', params)
-  // O TMDB não aceita page acima de 500, mesmo quando total_pages é maior
-  return {
-    movies: data.results.map(toMovie),
-    page: data.page,
-    totalPages: Math.min(data.total_pages, MAX_PAGES),
-  }
+  return toMoviePage(data, data.results.map(toMovie))
+}
+
+// Mesma regra que o /discover aplica com vote_average.gte e vote_count.gte
+function meetsRating(movie, minRating) {
+  if (minRating === 0) return true
+  return movie.vote_average >= minRating && movie.vote_count >= MIN_VOTES
+}
+
+// A busca do TMDB não aceita filtro de streaming, então cada resultado é conferido
+export async function searchStreamingMovies({ query, providers, minRating, page }) {
+  const data = await request('/search/movie', { query, page: String(page), include_adult: 'false' })
+  const availability = await Promise.all(
+    data.results.map((m) => request(`/movie/${m.id}/watch/providers`)),
+  )
+
+  const movies = data.results.filter((m, i) => {
+    const flatrate = availability[i].results?.[REGION]?.flatrate ?? []
+    if (flatrate.length === 0) return false
+    if (providers.length > 0 && !flatrate.some((p) => providers.includes(p.provider_id))) return false
+    return meetsRating(m, minRating)
+  })
+  return toMoviePage(data, movies.map(toMovie))
 }
 
 export async function getMovieDetails(id) {

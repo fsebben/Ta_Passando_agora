@@ -1,4 +1,4 @@
-import { getMovieDetails, getProviders, getStreamingMovies, imageUrl } from './tmdb'
+import { getMovieDetails, getProviders, getStreamingMovies, imageUrl, searchStreamingMovies } from './tmdb'
 
 const TOKEN_MSG = 'Token do TMDB inválido ou ausente. Configure VITE_TMDB_TOKEN no arquivo .env.'
 const NOT_FOUND_MSG = 'Filme não encontrado.'
@@ -227,5 +227,121 @@ describe('404 fora da página de detalhes', () => {
   test('404 em getStreamingMovies vira a mensagem genérica', async () => {
     mockFetch({}, { ok: false, status: 404 })
     await expect(getStreamingMovies({ providers: [], page: 1 })).rejects.toThrow(GENERIC_MSG)
+  })
+})
+
+describe('getStreamingMovies com nota mínima', () => {
+  test('minRating 8 envia vote_average.gte=8 e vote_count.gte=200', async () => {
+    const fetchMock = mockFetch({ page: 1, total_pages: 1, results: [] })
+    await getStreamingMovies({ providers: [], minRating: 8, page: 1 })
+    const params = calledUrl(fetchMock).searchParams
+    expect(params.get('vote_average.gte')).toBe('8')
+    expect(params.get('vote_count.gte')).toBe('200')
+  })
+
+  test('minRating 0 não envia vote_average.gte nem vote_count.gte', async () => {
+    const fetchMock = mockFetch({ page: 1, total_pages: 1, results: [] })
+    await getStreamingMovies({ providers: [], minRating: 0, page: 1 })
+    const params = calledUrl(fetchMock).searchParams
+    expect(params.has('vote_average.gte')).toBe(false)
+    expect(params.has('vote_count.gte')).toBe(false)
+  })
+})
+
+describe('searchStreamingMovies', () => {
+  // Responde conforme a URL: /search/movie devolve a busca; /movie/{id}/watch/providers devolve o BR daquele id
+  function mockSearch({ results, page = 1, total_pages = 1, providersById = {}, failId }) {
+    const fetchMock = vi.fn(async (url) => {
+      const { pathname } = new URL(url)
+      if (pathname === '/3/search/movie') {
+        return { ok: true, status: 200, json: async () => ({ page, total_pages, results }) }
+      }
+      const id = Number(pathname.split('/')[3])
+      if (id === failId) return { ok: false, status: 500, json: async () => ({}) }
+      const br = providersById[id]
+      return { ok: true, status: 200, json: async () => ({ id, results: br ? { BR: br } : {} }) }
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    return fetchMock
+  }
+
+  function result(id, extra = {}) {
+    return { id, title: `F${id}`, poster_path: null, release_date: '2020-01-01', vote_average: 7, vote_count: 1000, ...extra }
+  }
+
+  const flat = (...ids) => ({ flatrate: ids.map((id) => ({ provider_id: id, provider_name: `P${id}`, logo_path: '/x.png' })) })
+
+  test('monta a URL de busca', async () => {
+    const fetchMock = mockSearch({ results: [] })
+    await searchStreamingMovies({ query: 'batman', providers: [], minRating: 0, page: 2 })
+    const url = new URL(fetchMock.mock.calls[0][0])
+    expect(url.pathname).toBe('/3/search/movie')
+    expect(url.searchParams.get('query')).toBe('batman')
+    expect(url.searchParams.get('page')).toBe('2')
+    expect(url.searchParams.get('include_adult')).toBe('false')
+    expect(url.searchParams.get('language')).toBe('pt-BR')
+  })
+
+  test('preserva caracteres especiais e acentos na busca', async () => {
+    const fetchMock = mockSearch({ results: [] })
+    await searchStreamingMovies({ query: 'Tom & Jerry ção', providers: [], minRating: 0, page: 1 })
+    expect(new URL(fetchMock.mock.calls[0][0]).searchParams.get('query')).toBe('Tom & Jerry ção')
+  })
+
+  test('mantém só filmes com flatrate no BR, na ordem original', async () => {
+    mockSearch({
+      results: [result(1), result(2), result(3), result(4)],
+      providersById: { 1: flat(8), 2: { rent: [{ provider_id: 2 }] }, 4: flat(119) },
+    })
+    const { movies } = await searchStreamingMovies({ query: 'x', providers: [], minRating: 0, page: 1 })
+    expect(movies.map((m) => m.id)).toEqual([1, 4])
+    expect(movies[0]).toEqual({ id: 1, title: 'F1', posterPath: null, releaseDate: '2020-01-01', voteAverage: 7, voteCount: 1000 })
+  })
+
+  test('com providers mantém só quem tem um deles em flatrate', async () => {
+    mockSearch({ results: [result(1), result(4)], providersById: { 1: flat(8, 337), 4: flat(119) } })
+    const { movies } = await searchStreamingMovies({ query: 'x', providers: [8], minRating: 0, page: 1 })
+    expect(movies.map((m) => m.id)).toEqual([1])
+  })
+
+  test('com minRating 8 descarta nota baixa e poucos votos', async () => {
+    mockSearch({
+      results: [
+        result(5, { vote_average: 8.5, vote_count: 500 }),
+        result(6, { vote_average: 7.9, vote_count: 500 }),
+        result(7, { vote_average: 9.0, vote_count: 150 }),
+      ],
+      providersById: { 5: flat(8), 6: flat(8), 7: flat(8) },
+    })
+    const { movies } = await searchStreamingMovies({ query: 'x', providers: [], minRating: 8, page: 1 })
+    expect(movies.map((m) => m.id)).toEqual([5])
+  })
+
+  test('com minRating descarta filme sem vote_average ou vote_count', async () => {
+    mockSearch({
+      results: [result(8, { vote_average: undefined }), result(9, { vote_count: undefined })],
+      providersById: { 8: flat(8), 9: flat(8) },
+    })
+    const { movies } = await searchStreamingMovies({ query: 'x', providers: [], minRating: 6, page: 1 })
+    expect(movies).toEqual([])
+  })
+
+  test('página sem filmes em streaming devolve lista vazia com mais páginas', async () => {
+    mockSearch({ results: [result(1), result(2)], page: 1, total_pages: 3 })
+    expect(await searchStreamingMovies({ query: 'x', providers: [], minRating: 0, page: 1 })).toEqual({
+      movies: [],
+      page: 1,
+      totalPages: 3,
+    })
+  })
+
+  test('falha numa consulta de providers vira a mensagem genérica', async () => {
+    mockSearch({ results: [result(1), result(2)], providersById: { 1: flat(8) }, failId: 2 })
+    await expect(searchStreamingMovies({ query: 'x', providers: [], minRating: 0, page: 1 })).rejects.toThrow(GENERIC_MSG)
+  })
+
+  test('totalPages da busca limitado a 500', async () => {
+    mockSearch({ results: [], total_pages: 800 })
+    expect((await searchStreamingMovies({ query: 'x', providers: [], minRating: 0, page: 1 })).totalPages).toBe(500)
   })
 })
