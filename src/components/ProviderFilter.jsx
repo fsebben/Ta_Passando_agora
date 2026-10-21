@@ -20,14 +20,6 @@ function ProviderFilter({ providers, selected, onChange }) {
           <img src={imageUrl(provider.logoPath, 'w92')} alt={provider.name} />
         </button>
       ))}
-      <button
-        type="button"
-        className="provider-filter__clear"
-        disabled={selected.length === 0}
-        onClick={() => onChange([])}
-      >
-        Limpar
-      </button>
     </div>
   )
 }

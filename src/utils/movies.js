@@ -17,3 +17,17 @@ export function mergeMovies(current, incoming) {
   })
   return [...current, ...added]
 }
+
+export const RATING_OPTIONS = [
+  { value: 0, label: 'Qualquer nota' },
+  { value: 6, label: '6+' },
+  { value: 7, label: '7+' },
+  { value: 8, label: '8+' },
+  { value: 9, label: '9+' },
+]
+
+// "8" -> 8; qualquer valor que não seja uma das opções do menu vira 0 ("Qualquer nota")
+export function parseMinRating(param) {
+  const option = RATING_OPTIONS.find((o) => o.value > 0 && String(o.value) === param)
+  return option ? option.value : 0
+}

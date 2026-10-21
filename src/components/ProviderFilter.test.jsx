@@ -37,13 +37,7 @@ test('marca os selecionados com aria-pressed', () => {
   expect(screen.getByRole('button', { name: 'Netflix' })).toHaveAttribute('aria-pressed', 'false')
 })
 
-test('"Limpar" esvazia a seleção', async () => {
-  const onChange = renderFilter([8])
-  await userEvent.click(screen.getByRole('button', { name: 'Limpar' }))
-  expect(onChange).toHaveBeenCalledWith([])
-})
-
-test('"Limpar" fica desabilitado sem seleção', () => {
-  renderFilter([])
-  expect(screen.getByRole('button', { name: 'Limpar' })).toBeDisabled()
+test('não renderiza botão "Limpar"', () => {
+  renderFilter([8])
+  expect(screen.queryByRole('button', { name: 'Limpar' })).not.toBeInTheDocument()
 })

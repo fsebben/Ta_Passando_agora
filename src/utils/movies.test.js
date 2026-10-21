@@ -1,4 +1,4 @@
-import { mergeMovies, parseProviderIds } from './movies'
+import { mergeMovies, parseMinRating, parseProviderIds } from './movies'
 
 describe('parseProviderIds', () => {
   test('lê ids separados por vírgula', () => expect(parseProviderIds('8,119')).toEqual([8, 119]))
@@ -23,4 +23,9 @@ describe('mergeMovies com repetidos na mesma resposta', () => {
     const b = { id: 2 }
     expect(mergeMovies([], [a, aRepetido, b])).toEqual([a, b])
   })
+})
+
+describe('parseMinRating', () => {
+  test('aceita 8', () => expect(parseMinRating('8')).toBe(8))
+  test.each([null, 'abc', '5', '8.5', ''])('valor %s vira 0', (value) => expect(parseMinRating(value)).toBe(0))
 })
