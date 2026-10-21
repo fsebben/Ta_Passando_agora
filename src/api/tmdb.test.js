@@ -71,9 +71,9 @@ describe('getStreamingMovies', () => {
 describe('getProviders', () => {
   test('ordena por display_priorities.BR (ou display_priority) e limita a 10', async () => {
     const results = Array.from({ length: 12 }, (_, i) => ({
-      provider_id: i + 1,
-      provider_name: `P${i + 1}`,
-      logo_path: `/l${i + 1}.png`,
+      provider_id: 101 + i,
+      provider_name: `P${101 + i}`,
+      logo_path: `/l${101 + i}.png`,
       display_priorities: { BR: 12 - i },
       display_priority: 99,
     }))
@@ -89,8 +89,8 @@ describe('getProviders', () => {
     expect(url.searchParams.get('watch_region')).toBe('BR')
     expect(url.searchParams.get('language')).toBe('pt-BR')
     expect(providers).toHaveLength(10)
-    expect(providers[0]).toEqual({ id: 1, name: 'P1', logoPath: '/l1.png' })
-    expect(providers.map((p) => p.id)).toEqual([1, 12, 11, 10, 9, 8, 7, 6, 5, 4])
+    expect(providers[0]).toEqual({ id: 101, name: 'P101', logoPath: '/l101.png' })
+    expect(providers.map((p) => p.id)).toEqual([101, 112, 111, 110, 109, 108, 107, 106, 105, 104])
   })
 })
 
@@ -198,5 +198,22 @@ describe('dados inesperados da API', () => {
   test('resposta que não é JSON vira a mensagem genérica', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => { throw new SyntaxError('Unexpected token <') } }))
     await expect(getProviders()).rejects.toThrow(GENERIC_MSG)
+  })
+})
+
+describe('getProviders sem lojas de aluguel e compra', () => {
+  test('remove Apple TV Store, Google Play, Amazon Video e Microsoft Store e completa com os próximos', async () => {
+    const ids = [2, 8, 3, 119, 10, 350, 68, 337, 167, 47, 531, 1899, 307, 484]
+    const results = ids.map((id, i) => ({
+      provider_id: id,
+      provider_name: `P${id}`,
+      logo_path: `/l${id}.png`,
+      display_priorities: { BR: i },
+    }))
+    mockFetch({ results })
+
+    const providers = await getProviders()
+
+    expect(providers.map((p) => p.id)).toEqual([8, 119, 350, 337, 167, 47, 531, 1899, 307, 484])
   })
 })

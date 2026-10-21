@@ -7,6 +7,9 @@ const REGION = 'BR'
 const LANGUAGE = 'pt-BR'
 const MAX_PROVIDERS = 10
 const MAX_PAGES = 500
+// Lojas de aluguel/compra: o TMDB as lista junto com os streamings, mas não são assinatura
+// 2 = Apple TV Store, 3 = Google Play Filmes, 10 = Amazon Video, 68 = Microsoft Store
+const RENTAL_STORE_IDS = [2, 3, 10, 68]
 
 const TOKEN_ERROR = 'Token do TMDB inválido ou ausente. Configure VITE_TMDB_TOKEN no arquivo .env.'
 export const NOT_FOUND_ERROR = 'Filme não encontrado.'
@@ -55,7 +58,8 @@ function toMovie(m) {
 export async function getProviders() {
   const data = await request('/watch/providers/movie', { watch_region: REGION })
   const priority = (p) => p.display_priorities?.[REGION] ?? p.display_priority
-  return [...data.results]
+  return data.results
+    .filter((p) => !RENTAL_STORE_IDS.includes(p.provider_id))
     .sort((a, b) => priority(a) - priority(b))
     .slice(0, MAX_PROVIDERS)
     .map(toProvider)
