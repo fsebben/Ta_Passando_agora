@@ -351,3 +351,22 @@ describe('busca e nota mínima', () => {
     expect(movieTitles()).toEqual(['Filme 2'])
   })
 })
+
+test('Carregar mais que traz uma página sem filmes em streaming avisa o usuário', async () => {
+  vi.mocked(searchStreamingMovies)
+    .mockResolvedValueOnce(pageOf([1], 1, 3))
+    .mockResolvedValueOnce(pageOf([], 2, 3))
+    .mockResolvedValueOnce(pageOf([3], 3, 3))
+  renderHome('/?busca=batman')
+  await screen.findByText('Filme 1')
+
+  await userEvent.click(screen.getByRole('button', { name: 'Carregar mais' }))
+
+  expect(await screen.findByText('Nenhum filme em streaming nesta página; tente carregar mais.')).toBeInTheDocument()
+  expect(movieTitles()).toEqual(['Filme 1'])
+
+  await userEvent.click(screen.getByRole('button', { name: 'Carregar mais' }))
+
+  expect(await screen.findByText('Filme 3')).toBeInTheDocument()
+  expect(screen.queryByText('Nenhum filme em streaming nesta página; tente carregar mais.')).not.toBeInTheDocument()
+})

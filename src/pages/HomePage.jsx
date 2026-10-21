@@ -28,6 +28,8 @@ function HomePage() {
   const [retryCount, setRetryCount] = useState(0)
   const [loadingMore, setLoadingMore] = useState(false)
   const [loadMoreError, setLoadMoreError] = useState('')
+  // Na busca, "Carregar mais" pode trazer uma página sem nada em streaming; avisamos para não parecer que falhou
+  const [emptyPageNotice, setEmptyPageNotice] = useState(false)
 
   // Guarda o filtro atual para descartar respostas do "Carregar mais" de um filtro antigo
   const currentFilter = useRef(filterKey)
@@ -52,6 +54,7 @@ function HomePage() {
     setMovies([])
     setLoadingMore(false)
     setLoadMoreError('')
+    setEmptyPageNotice(false)
 
     fetchPage(1)
       .then((data) => {
@@ -87,9 +90,11 @@ function HomePage() {
     const filterAtRequest = filterKey
     setLoadingMore(true)
     setLoadMoreError('')
+    setEmptyPageNotice(false)
     try {
       const data = await fetchPage(page + 1)
       if (currentFilter.current !== filterAtRequest) return
+      setEmptyPageNotice(data.movies.length === 0 && data.page < data.totalPages)
       setMovies((current) => mergeMovies(current, data.movies))
       setPage(data.page)
       setTotalPages(data.totalPages)
@@ -158,6 +163,9 @@ function HomePage() {
           {(movies.length > 0 || hasMorePages) && (
             <div className="load-more">
               {loadMoreError && <ErrorMessage message={loadMoreError} />}
+              {emptyPageNotice && (
+                <p className="empty">Nenhum filme em streaming nesta página; tente carregar mais.</p>
+              )}
               {loadingMore ? (
                 <Loading />
               ) : (
