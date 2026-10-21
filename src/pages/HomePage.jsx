@@ -1,17 +1,23 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { getProviders, getStreamingMovies } from '../api/tmdb'
+import { getProviders, getStreamingMovies, searchStreamingMovies } from '../api/tmdb'
 import ErrorMessage from '../components/ErrorMessage'
 import Loading from '../components/Loading'
 import MovieGrid from '../components/MovieGrid'
 import ProviderFilter from '../components/ProviderFilter'
-import { mergeMovies, parseProviderIds } from '../utils/movies'
+import RatingFilter from '../components/RatingFilter'
+import SearchBar from '../components/SearchBar'
+import { mergeMovies, parseMinRating, parseProviderIds } from '../utils/movies'
 
 function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  // Texto da URL (ex.: "8,119"); usado como dependência dos efeitos por ser comparável
-  const filterKey = searchParams.get('streaming') ?? ''
-  const selected = parseProviderIds(filterKey)
+  const query = (searchParams.get('busca') ?? '').trim()
+  const providersKey = searchParams.get('streaming') ?? ''
+  const selected = parseProviderIds(providersKey)
+  const minRating = parseMinRating(searchParams.get('nota'))
+  // Junta os três filtros num texto comparável, usado como dependência dos efeitos
+  const filterKey = `${query}|${providersKey}|${minRating}`
+  const hasFilters = query !== '' || selected.length > 0 || minRating > 0
 
   const [providers, setProviders] = useState([])
   const [movies, setMovies] = useState([])
@@ -25,6 +31,12 @@ function HomePage() {
 
   // Guarda o filtro atual para descartar respostas do "Carregar mais" de um filtro antigo
   const currentFilter = useRef(filterKey)
+
+  // Com busca, usa a busca por nome; sem busca, a listagem por popularidade
+  function fetchPage(pageNumber) {
+    const filters = { providers: selected, minRating, page: pageNumber }
+    return query ? searchStreamingMovies({ query, ...filters }) : getStreamingMovies(filters)
+  }
 
   useEffect(() => {
     getProviders()
@@ -41,7 +53,7 @@ function HomePage() {
     setLoadingMore(false)
     setLoadMoreError('')
 
-    getStreamingMovies({ providers: parseProviderIds(filterKey), page: 1 })
+    fetchPage(1)
       .then((data) => {
         if (ignore) return
         setMovies(mergeMovies([], data.movies))
@@ -58,10 +70,17 @@ function HomePage() {
     return () => {
       ignore = true
     }
+    // fetchPage usa os valores derivados de filterKey, que já está nas dependências
   }, [filterKey, retryCount])
 
-  function handleFilterChange(ids) {
-    setSearchParams(ids.length > 0 ? { streaming: ids.join(',') } : {})
+  // Aplica mudanças na URL mantendo os outros filtros; valor vazio remove o parâmetro
+  function updateParams(changes) {
+    const next = new URLSearchParams(searchParams)
+    for (const [key, value] of Object.entries(changes)) {
+      if (value) next.set(key, value)
+      else next.delete(key)
+    }
+    setSearchParams(next)
   }
 
   async function handleLoadMore() {
@@ -69,7 +88,7 @@ function HomePage() {
     setLoadingMore(true)
     setLoadMoreError('')
     try {
-      const data = await getStreamingMovies({ providers: selected, page: page + 1 })
+      const data = await fetchPage(page + 1)
       if (currentFilter.current !== filterAtRequest) return
       setMovies((current) => mergeMovies(current, data.movies))
       setPage(data.page)
@@ -82,17 +101,40 @@ function HomePage() {
     }
   }
 
+  const hasMorePages = page < totalPages
+
   return (
     <main className="home">
       <section className="hero">
         <p className="hero__lead">
           Filmes disponíveis hoje nos streamings por assinatura no Brasil. Marque os que você assina.
         </p>
-        {/* Com filtro ativo, mostra pelo menos o "Limpar", mesmo se os logos não carregaram */}
-        {(providers.length > 0 || selected.length > 0) && (
-          <ProviderFilter providers={providers} selected={selected} onChange={handleFilterChange} />
+        <SearchBar value={query} onSearch={(text) => updateParams({ busca: text })} />
+        {providers.length > 0 && (
+          <ProviderFilter
+            providers={providers}
+            selected={selected}
+            onChange={(ids) => updateParams({ streaming: ids.join(',') })}
+          />
         )}
+        <div className="filters-row">
+          <RatingFilter
+            value={minRating}
+            onChange={(rating) => updateParams({ nota: rating > 0 ? String(rating) : '' })}
+          />
+          {/* Sempre visível: limpa até um filtro de streaming cujos logos não carregaram */}
+          <button
+            type="button"
+            className="clear-filters"
+            disabled={!hasFilters}
+            onClick={() => setSearchParams({})}
+          >
+            Limpar filtros
+          </button>
+        </div>
       </section>
+
+      {query && <h2 className="results-title">Resultados para "{query}"</h2>}
 
       {status === 'loading' && <Loading />}
 
@@ -100,25 +142,33 @@ function HomePage() {
         <ErrorMessage message={error} onRetry={() => setRetryCount((n) => n + 1)} />
       )}
 
-      {status === 'success' && movies.length === 0 && (
-        <p className="empty">Nenhum filme encontrado para esses serviços</p>
-      )}
-
-      {status === 'success' && movies.length > 0 && (
+      {status === 'success' && (
         <>
-          <MovieGrid movies={movies} />
-          <div className="load-more">
-            {loadMoreError && <ErrorMessage message={loadMoreError} />}
-            {loadingMore ? (
-              <Loading />
-            ) : (
-              page < totalPages && (
-                <button type="button" onClick={handleLoadMore}>
-                  Carregar mais
-                </button>
-              )
-            )}
-          </div>
+          {movies.length > 0 && <MovieGrid movies={movies} />}
+
+          {movies.length === 0 && !hasMorePages && (
+            <p className="empty">Nenhum filme encontrado com esses filtros</p>
+          )}
+
+          {/* Só na busca: uma página de resultados pode não ter nada em streaming */}
+          {movies.length === 0 && hasMorePages && (
+            <p className="empty">Nenhum filme em streaming nesta página de resultados.</p>
+          )}
+
+          {(movies.length > 0 || hasMorePages) && (
+            <div className="load-more">
+              {loadMoreError && <ErrorMessage message={loadMoreError} />}
+              {loadingMore ? (
+                <Loading />
+              ) : (
+                hasMorePages && (
+                  <button type="button" onClick={handleLoadMore}>
+                    Carregar mais
+                  </button>
+                )
+              )}
+            </div>
+          )}
         </>
       )}
     </main>

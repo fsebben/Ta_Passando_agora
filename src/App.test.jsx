@@ -38,7 +38,7 @@ function renderApp(entry) {
 test('mostra o cabeçalho com link para a tela inicial', async () => {
   renderApp('/')
   expect(screen.getByRole('link', { name: 'Tá passando agora' })).toHaveAttribute('href', '/')
-  expect(await screen.findByText('Nenhum filme encontrado para esses serviços')).toBeInTheDocument()
+  expect(await screen.findByText('Nenhum filme encontrado com esses filtros')).toBeInTheDocument()
 })
 
 test('mostra os créditos do TMDB e do JustWatch no rodapé', () => {

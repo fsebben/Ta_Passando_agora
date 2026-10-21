@@ -1,13 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 // A busca só roda ao enviar (Enter ou botão): cada busca faz várias chamadas à API
 function SearchBar({ value, onSearch }) {
   const [text, setText] = useState(value)
+  const [previousValue, setPreviousValue] = useState(value)
 
   // Acompanha a URL quando ela muda por fora (ex.: "Limpar filtros" ou botão voltar)
-  useEffect(() => {
+  if (value !== previousValue) {
+    setPreviousValue(value)
     setText(value)
-  }, [value])
+  }
 
   function handleSubmit(event) {
     event.preventDefault()
