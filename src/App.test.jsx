@@ -37,7 +37,7 @@ function renderApp(entry) {
 
 test('mostra o cabeçalho com link para a tela inicial', async () => {
   renderApp('/')
-  expect(screen.getByRole('link', { name: 'Catálogo de Streaming' })).toHaveAttribute('href', '/')
+  expect(screen.getByRole('link', { name: 'Tá passando agora' })).toHaveAttribute('href', '/')
   expect(await screen.findByText('Nenhum filme encontrado para esses serviços')).toBeInTheDocument()
 })
 

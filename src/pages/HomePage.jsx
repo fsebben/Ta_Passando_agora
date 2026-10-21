@@ -84,10 +84,15 @@ function HomePage() {
 
   return (
     <main className="home">
-      {/* Com filtro ativo, mostra pelo menos o "Limpar", mesmo se os logos não carregaram */}
-      {(providers.length > 0 || selected.length > 0) && (
-        <ProviderFilter providers={providers} selected={selected} onChange={handleFilterChange} />
-      )}
+      <section className="hero">
+        <p className="hero__lead">
+          Filmes disponíveis hoje nos streamings por assinatura no Brasil. Marque os que você assina.
+        </p>
+        {/* Com filtro ativo, mostra pelo menos o "Limpar", mesmo se os logos não carregaram */}
+        {(providers.length > 0 || selected.length > 0) && (
+          <ProviderFilter providers={providers} selected={selected} onChange={handleFilterChange} />
+        )}
+      </section>
 
       {status === 'loading' && <Loading />}
 

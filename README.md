@@ -1,4 +1,4 @@
-# Catálogo de Streaming
+# Tá passando agora
 
 Web app que mostra os filmes disponíveis **agora** nos serviços de streaming por assinatura no Brasil (Netflix, Prime Video, Max, Disney+, Globoplay...).
 

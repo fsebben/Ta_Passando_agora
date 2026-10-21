@@ -7,7 +7,7 @@ function ProviderFilter({ providers, selected, onChange }) {
   }
 
   return (
-    <div className="provider-filter">
+    <div className="provider-filter" role="group" aria-label="Serviços de streaming">
       {providers.map((provider) => (
         <button
           key={provider.id}
